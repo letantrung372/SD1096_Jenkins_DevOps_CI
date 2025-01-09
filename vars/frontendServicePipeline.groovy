@@ -8,7 +8,7 @@ void call(Map pipelineParams) {
     def ECR_REGISTRY = "${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     def IMAGE_TAG = "${SERVICE_NAME}.${BUILD_NUMBER}-${new Date().format('yyyyMMddHHmmss')}"
     def CONTAINER_NAME = "${SERVICE_NAME}-container"
-    def CLUSTER_NAME = 'practical-devops-eks'
+    def CLUSTER_NAME = 'dev-msa-cluster'
     def NAMESPACE = "msa-application-namespace"
     def DEPLOYMENT_NAME = "${SERVICE_NAME}-development"
     def ECR_REPOSITORY = "dev-${SERVICE_NAME}"
