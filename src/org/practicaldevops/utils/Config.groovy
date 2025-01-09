@@ -1,6 +1,6 @@
-package org.company.utils
+package org.practicaldevops.utils
 
-@Grab('org.yaml.snakeyaml:snakeyaml-engine:2.3')
+@Grab('org.yaml.snakeyaml:snakeyaml-engine:2.8')
 import org.snakeyaml.engine.v2.YAML
 
 class Config implements Serializable {

@@ -1,5 +1,5 @@
-package org.company.template
-import org.company.utils.Config
+package org.practicaldevops.templates
+import org.practicaldevops.utils.Config
 
 abstract class PipelineTemplate implements Serializable {
     protected def script
