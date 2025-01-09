@@ -9,9 +9,9 @@ void call(Map pipelineParams) {
     def IMAGE_TAG = "${SERVICE_NAME}.${BUILD_NUMBER}-${new Date().format('yyyyMMddHHmmss')}"
     def CONTAINER_NAME = "${SERVICE_NAME}-container"
     def CLUSTER_NAME = 'practical-devops-eks'
-    def NAMESPACE = "${SERVICE_NAME}-ns"
+    def NAMESPACE = "msa-application-namespace"
     def DEPLOYMENT_NAME = "${SERVICE_NAME}-development"
-    def ECR_REPOSITORY = "practical-devops-ecr"
+    def ECR_REPOSITORY = "dev-${SERVICE_NAME}"
 
     def global = new Global()
 
