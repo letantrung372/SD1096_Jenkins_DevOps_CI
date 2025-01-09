@@ -3,16 +3,15 @@ import org.practicaldevops.*
 
 void call(Map pipelineParams) {
     def AWS_REGION = 'ap-southeast-1'
-    def ECR_REPO = 'practical-devops-ecr'
     def AWS_ACCOUNTID = '307946653621'
-    def serviceName = 'backend'
+    def SERVICE_NAME = 'backend'
     def ECR_REGISTRY = "${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-    def IMAGE_TAG = "SD1096-${serviceName}.${BUILD_NUMBER}-${new Date().format('yyyyMMddHHmmss')}"
-    def CONTAINER_NAME = "${serviceName}-container"
+    def IMAGE_TAG = "${SERVICE_NAME}.${BUILD_NUMBER}-${new Date().format('yyyyMMddHHmmss')}"
+    def CONTAINER_NAME = "${SERVICE_NAME}-container"
     def CLUSTER_NAME = 'practical-devops-eks'
-    def NAMESPACE = "${serviceName}-ns"
-    def DEPLOYMENT_NAME = "${serviceName}-development"
-    def ECR_REPOSITORY = "${ECR_REPO}"
+    def NAMESPACE = "${SERVICE_NAME}-ns"
+    def DEPLOYMENT_NAME = "${SERVICE_NAME}-development"
+    def ECR_REPOSITORY = "practical-devops-ecr"
 
     def global = new Global()
 
@@ -47,7 +46,7 @@ void call(Map pipelineParams) {
                     script {
                         dir('src/backend') {
                             sh """
-                                docker build -t ${ECR_REPO}:${IMAGE_TAG} .
+                                docker build -t ${ECR_REPOSITORY}:${IMAGE_TAG} .
                             """
                         }
                     }
@@ -58,7 +57,7 @@ void call(Map pipelineParams) {
                 steps {
                     script {
                         sh """
-                            docker tag ${ECR_REPO}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
+                            docker tag ${ECR_REPOSITORY}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
                         """
                     }
                 }
@@ -68,7 +67,7 @@ void call(Map pipelineParams) {
                 steps {
                     script {
                         sh """
-                            docker push ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
+                            docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
                         """
                     }
                 }
@@ -84,7 +83,7 @@ void call(Map pipelineParams) {
                             rm -rf SD1096_MSA_GitOps
 
                             git clone https://${GITHUB_TOKEN}@github.com/letantrung372/SD1096_MSA_GitOps.git
-                            cd SD1096_MSA_GitOps/${serviceName}
+                            cd SD1096_MSA_GitOps/${SERVICE_NAME}
 
                             # Update the deployment.yaml with the new image tag
                                 sed -i 's|image: .*|image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}|g' deployment.yaml
@@ -109,7 +108,7 @@ void call(Map pipelineParams) {
                                 ECR_REPOSITORY: ECR_REPOSITORY,
                                 IMAGE_TAG: IMAGE_TAG,
                                 CONTAINER_NAME: CONTAINER_NAME,
-                                SERVICE_NAME:serviceName
+                                SERVICE_NAME:SERVICE_NAME
                 )
                         }
                     }
