@@ -28,6 +28,7 @@ def buildDockerImages(args) {
 def tagDockerImages(args) {
     def ECR_REPOSITORY = args.ECR_REPOSITORY
     def IMAGE_TAG = args.IMAGE_TAG
+    def ECR_REGISTRY = args.ECR_REGISTRY
 
     script {
                 sh """
@@ -39,7 +40,8 @@ def tagDockerImages(args) {
 def pushDockerImages(args) {
     def ECR_REPOSITORY = args.ECR_REPOSITORY
     def IMAGE_TAG = args.IMAGE_TAG
-
+    def ECR_REGISTRY = args.ECR_REGISTRY
+    
     script {
                 sh """
                 docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
