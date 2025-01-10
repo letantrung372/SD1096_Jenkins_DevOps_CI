@@ -15,7 +15,7 @@ void call(Map pipelineParams) {
         KUBERNETES: [
             CLUSTER_NAME: 'dev-msa-cluster',
             NAMESPACE: 'msa-application-namespace',
-            DEPLOYMENT_NAME: 'backend-development'
+            DEPLOYMENT_NAME: 'backend-deployment'
         ],
         GIT: [
             REPO_NAME: 'SD1096_MSA_GitOps'
