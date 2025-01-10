@@ -44,21 +44,25 @@ void call(Map pipelineParams) {
         stages {
             stage('AWS Authentication & ECR Login') {
                 steps {
-                    withAWS(credentials: 'aws-credentials', region: config.AWS.REGION) {
-                        global.loginToECR(
-                            AWS_REGION: config.AWS.REGION,
-                            ECR_REGISTRY: ECR_REGISTRY
-                        )
+                    script{
+                        withAWS(credentials: 'aws-credentials', region: config.AWS.REGION) {
+                            global.loginToECR(
+                                AWS_REGION: config.AWS.REGION,
+                                ECR_REGISTRY: ECR_REGISTRY
+                            )
+                        }
                     }
                 }
             }
 
             stage('Build Docker Image') {
                 steps {
-                    global.buildDockerImages(
-                        ECR_REPOSITORY: config.SERVICE.ECR_REPOSITORY,
-                        IMAGE_TAG: IMAGE_TAG
-                    )
+                    script{
+                        global.buildDockerImages(
+                            ECR_REPOSITORY: config.SERVICE.ECR_REPOSITORY,
+                            IMAGE_TAG: IMAGE_TAG
+                        )
+                    }
                 }
             }
 
