@@ -104,7 +104,8 @@ void call(Map pipelineParams) {
                                 ECR_REPOSITORY: config.SERVICE.ECR_REPOSITORY,
                                 IMAGE_TAG: IMAGE_TAG,
                                 CONTAINER_NAME: config.SERVICE.CONTAINER_NAME,
-                                SERVICE_NAME: config.SERVICE.NAME
+                                SERVICE_NAME: config.SERVICE.NAME,
+                                ECR_REGISTRY:ECR_REGISTRY
                             )
                         }
                     }
