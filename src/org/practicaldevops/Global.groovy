@@ -41,7 +41,7 @@ def pushDockerImages(args) {
     def ECR_REPOSITORY = args.ECR_REPOSITORY
     def IMAGE_TAG = args.IMAGE_TAG
     def ECR_REGISTRY = args.ECR_REGISTRY
-    
+
     script {
                 sh """
                 docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
@@ -57,6 +57,7 @@ def deployToEKS(args) {
     def CONTAINER_NAME = args.CONTAINER_NAME
     def ECR_REGISTRY = args.ECR_REGISTRY
     def SERVICE_NAME = args.SERVICE_NAME
+    def DEPLOYMENT_NAME = args.DEPLOYMENT_NAME
 
     script {
                 sh """
@@ -71,12 +72,8 @@ def deployToEKS(args) {
             # Apply the deployment YAML
             kubectl apply -f deployment.yaml --namespace ${NAMESPACE}
 
-            # Get the actual deployment name from kubernetes
-            ACTUAL_DEPLOYMENT_NAME=\$(kubectl get deployment -n ${NAMESPACE} -o jsonpath='{.items[0].metadata.name}')
-            echo "Actual deployment name: \${ACTUAL_DEPLOYMENT_NAME}"
-
             # Update the container image using the actual deployment name
-            kubectl set image deployment/\${ACTUAL_DEPLOYMENT_NAME} \
+            kubectl set image deployment/${DEPLOYMENT_NAME} \
                 ${CONTAINER_NAME}=${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG} \
                 -n ${NAMESPACE}
 
