@@ -2,16 +2,29 @@
 import org.practicaldevops.*
 
 void call(Map pipelineParams) {
-    def AWS_REGION = 'ap-southeast-1'
-    def AWS_ACCOUNTID = '307946653621'
-    def SERVICE_NAME = 'backend'
-    def ECR_REGISTRY = "${AWS_ACCOUNTID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-    def IMAGE_TAG = "${SERVICE_NAME}.${BUILD_NUMBER}-${new Date().format('yyyyMMddHHmmss')}"
-    def CONTAINER_NAME = "${SERVICE_NAME}-container"
-    def CLUSTER_NAME = 'dev-msa-cluster'
-    def NAMESPACE = "msa-application-namespace"
-    def DEPLOYMENT_NAME = "${SERVICE_NAME}-development"
-    def ECR_REPOSITORY = "dev-${SERVICE_NAME}"
+    def config = [
+        AWS: [
+            REGION: 'ap-southeast-1',
+            ACCOUNT_ID: '307946653621'
+        ],
+        SERVICE: [
+            NAME: 'backend',
+            CONTAINER_NAME: 'backend-container',
+            ECR_REPOSITORY: 'dev-backend'
+        ],
+        KUBERNETES: [
+            CLUSTER_NAME: 'dev-msa-cluster',
+            NAMESPACE: 'msa-application-namespace',
+            DEPLOYMENT_NAME: 'backend-development'
+        ],
+        GIT: [
+            REPO_NAME: 'SD1096_MSA_GitOps'
+        ]
+    ]
+
+    // Derived values
+    def ECR_REGISTRY = "${config.AWS.ACCOUNT_ID}.dkr.ecr.${config.AWS.REGION}.amazonaws.com"
+    def IMAGE_TAG = "${config.SERVICE.NAME}.${BUILD_NUMBER}-${new Date().format('yyyyMMddHHmmss')}"
 
     def global = new Global()
 
@@ -29,13 +42,14 @@ void call(Map pipelineParams) {
         }
 
         stages {
-            stage('Login to AWS ECR') {
+            stage('AWS Authentication & ECR Login') {
                 steps {
-                    script {
-                        withAWS(credentials: 'AWSCredentails', region: AWS_REGION) {
-                            sh """
-                                aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                            """
+                    script{
+                        withAWS(credentials: 'aws-credentials', region: config.AWS.REGION) {
+                            global.loginToECR(
+                                AWS_REGION: config.AWS.REGION,
+                                ECR_REGISTRY: ECR_REGISTRY
+                            )
                         }
                     }
                 }
@@ -43,32 +57,29 @@ void call(Map pipelineParams) {
 
             stage('Build Docker Image') {
                 steps {
-                    script {
-                        dir('src/backend') {
-                            sh """
-                                docker build -t ${ECR_REPOSITORY}:${IMAGE_TAG} .
-                            """
-                        }
+                    script{
+                        global.buildDockerImages(
+                            ECR_REPOSITORY: config.SERVICE.ECR_REPOSITORY,
+                            IMAGE_TAG: IMAGE_TAG,
+                            SERVICE_NAME: config.SERVICE.NAME
+                        )
                     }
                 }
             }
 
-            stage('Tag Docker Image') {
+            stage('Tag & Push to ECR') {
                 steps {
                     script {
-                        sh """
-                            docker tag ${ECR_REPOSITORY}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
-                        """
-                    }
-                }
-            }
-
-            stage('Push to ECR') {
-                steps {
-                    script {
-                        sh """
-                            docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
-                        """
+                        global.tagDockerImages(
+                            ECR_REPOSITORY: config.SERVICE.ECR_REPOSITORY,
+                            IMAGE_TAG: IMAGE_TAG,
+                            ECR_REGISTRY:ECR_REGISTRY,
+                        )
+                        global.pushDockerImages(
+                            ECR_REPOSITORY: config.SERVICE.ECR_REPOSITORY,
+                            IMAGE_TAG: IMAGE_TAG,
+                            ECR_REGISTRY:ECR_REGISTRY,
+                        )
                     }
                 }
             }
@@ -76,40 +87,25 @@ void call(Map pipelineParams) {
             stage('Deploy to EKS') {
                 steps {
                     script {
-                        // Step 1: Clone the Git repository that contains the Kubernetes manifests
-                        withCredentials([string(credentialsId: 'github-pat', variable: 'GITHUB_TOKEN')]) {
-                            sh """
-                            # Clean any existing directory
-                            rm -rf SD1096_MSA_GitOps
+                        // Update GitOps repository
+                        global.updateGitOpsRepo(
+                            SERVICE_NAME:config.SERVICE.NAME,
+                            ECR_REGISTRY:ECR_REGISTRY,
+                            ECR_REPOSITORY:config.SERVICE.ECR_REPOSITORY,
+                            IMAGE_TAG: IMAGE_TAG,
+                        )
 
-                            git clone https://${GITHUB_TOKEN}@github.com/letantrung372/SD1096_MSA_GitOps.git
-                            cd SD1096_MSA_GitOps/${SERVICE_NAME}
-
-                            # Update the deployment.yaml with the new image tag
-                                sed -i 's|image: .*|image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}|g' deployment.yaml
-
-                                # Commit the changes to Git
-                                git config user.name "Jenkins CI"
-                                git config user.email "jenkins@your-domain.com"
-                                git add deployment.yaml
-                                git commit -m "Update deployment image to ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
-                                git push -f origin master  # Or use your relevant branch
-                        """
-                        }
-
-                        // Ensure that you are using the correct AWS credentials and region
-                        withAWS(credentials: 'AWSCredentails', region: AWS_REGION) {
-                            // Ensure the deployToEKS function is available in the global context
-
+                        // Deploy to EKS
+                        withAWS(credentials: 'aws-credentials', region: config.AWS.REGION) {
                             global.deployToEKS(
-                                CLUSTER_NAME: CLUSTER_NAME,
-                                NAMESPACE: NAMESPACE,
-                                DEPLOYMENT_NAME: DEPLOYMENT_NAME,
-                                ECR_REPOSITORY: ECR_REPOSITORY,
+                                CLUSTER_NAME: config.KUBERNETES.CLUSTER_NAME,
+                                NAMESPACE: config.KUBERNETES.NAMESPACE,
+                                DEPLOYMENT_NAME: config.KUBERNETES.DEPLOYMENT_NAME,
+                                ECR_REPOSITORY: config.SERVICE.ECR_REPOSITORY,
                                 IMAGE_TAG: IMAGE_TAG,
-                                CONTAINER_NAME: CONTAINER_NAME,
-                                SERVICE_NAME:SERVICE_NAME
-                )
+                                CONTAINER_NAME: config.SERVICE.CONTAINER_NAME,
+                                SERVICE_NAME: config.SERVICE.NAME
+                            )
                         }
                     }
                 }
@@ -117,6 +113,9 @@ void call(Map pipelineParams) {
         }
 
         post {
+            always {
+                echo 'Pipeline completed.'
+            }
             cleanup {
                 cleanWs()
             }
