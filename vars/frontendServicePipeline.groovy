@@ -72,11 +72,13 @@ void call(Map pipelineParams) {
                     script {
                         global.tagDockerImages(
                             ECR_REPOSITORY: config.SERVICE.ECR_REPOSITORY,
-                            IMAGE_TAG: IMAGE_TAG
+                            IMAGE_TAG: IMAGE_TAG,
+                            ECR_REGISTRY:ECR_REGISTRY,
                         )
                         global.pushDockerImages(
                             ECR_REPOSITORY: config.SERVICE.ECR_REPOSITORY,
-                            IMAGE_TAG: IMAGE_TAG
+                            IMAGE_TAG: IMAGE_TAG,
+                            ECR_REGISTRY:ECR_REGISTRY,
                         )
                     }
                 }
