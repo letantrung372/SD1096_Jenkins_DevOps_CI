@@ -14,11 +14,14 @@ def loginToECR(args) {
 def buildDockerImages(args) {
     def ECR_REPOSITORY = args.ECR_REPOSITORY
     def IMAGE_TAG = args.IMAGE_TAG
+    def SERVICE_NAME = args.SERVICE_NAME
 
     script {
-                sh """
+        dir("src/${SERVICE_NAME}") {
+            sh """
                 docker build -t ${ECR_REPOSITORY}:${IMAGE_TAG} .
-                """
+            """
+        }
     }
 }
 
