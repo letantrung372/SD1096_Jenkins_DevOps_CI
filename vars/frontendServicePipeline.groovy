@@ -60,7 +60,8 @@ void call(Map pipelineParams) {
                     script{
                         global.buildDockerImages(
                             ECR_REPOSITORY: config.SERVICE.ECR_REPOSITORY,
-                            IMAGE_TAG: IMAGE_TAG
+                            IMAGE_TAG: IMAGE_TAG,
+                            SERVICE_NAME: config.SERVICE.NAME
                         )
                     }
                 }
