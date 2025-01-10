@@ -1,12 +1,5 @@
 package org.practicaldevops
 
-// def pythonRunInstallDependencies(){
-//     stage ("Run Install Dependencies ") {
-//         sh "mkdir -p results"
-//         sh 'docker run --rm -v $(pwd):/app python:3.9-slim bash -c "pip install poetry && cd /app && poetry config virtualenvs.in-project true && poetry install"'
-//     }
-// }
-
 def loginToECR(args) {
     def AWS_REGION = args.AWS_REGION
     def ECR_REGISTRY = args.ECR_REGISTRY
@@ -53,8 +46,7 @@ def pushDockerImages(args) {
 
 def deployToEKS(args) {
     def CLUSTER_NAME = args.CLUSTER_NAME
-    def NAMESPACE = "practical-devops-ns"
-    // def DEPLOYMENT_NAME = args.DEPLOYMENT_NAME
+    def NAMESPACE = args.NAMESPACE
     def ECR_REPOSITORY = args.ECR_REPOSITORY
     def IMAGE_TAG = args.IMAGE_TAG
     def CONTAINER_NAME = args.CONTAINER_NAME
@@ -87,4 +79,31 @@ def deployToEKS(args) {
             #kubectl rollout status deployment/\${ACTUAL_DEPLOYMENT_NAME} -n ${NAMESPACE}
         """
             }
+}
+
+def updateGitOpsRepo(args) {
+    def SERVICE_NAME = args.SERVICE_NAME
+    def ECR_REGISTRY = args.ECR_REGISTRY
+    def ECR_REPOSITORY = args.ECR_REPOSITORY
+    def IMAGE_TAG = args.IMAGE_TAG
+
+    withCredentials([string(credentialsId: 'github-pat', variable: 'GITHUB_TOKEN')]) {
+        sh """
+        # Clean any existing directory
+        rm -rf SD1096_MSA_GitOps
+
+        git clone https://${GITHUB_TOKEN}@github.com/letantrung372/SD1096_MSA_GitOps.git
+        cd SD1096_MSA_GitOps/${SERVICE_NAME}
+
+        # Update the deployment.yaml with the new image tag
+            sed -i 's|image: .*|image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}|g' deployment.yaml
+
+            # Commit the changes to Git
+            git config user.name "Jenkins CI"
+            git config user.email "jenkins@your-domain.com"
+            git add deployment.yaml
+            git commit -m "Update deployment image to ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+            git push -f origin master  # Or use your relevant branch
+    """
+    }
 }
