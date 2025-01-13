@@ -95,19 +95,20 @@ void call(Map pipelineParams) {
                             IMAGE_TAG: IMAGE_TAG,
                         )
 
+                        //Comment out for Assignme 2: Using ArgoCD for deployment
                         // Deploy to EKS
-                        withAWS(credentials: 'aws-credentials', region: config.AWS.REGION) {
-                            global.deployToEKS(
-                                CLUSTER_NAME: config.KUBERNETES.CLUSTER_NAME,
-                                NAMESPACE: config.KUBERNETES.NAMESPACE,
-                                DEPLOYMENT_NAME: config.KUBERNETES.DEPLOYMENT_NAME,
-                                ECR_REPOSITORY: config.SERVICE.ECR_REPOSITORY,
-                                IMAGE_TAG: IMAGE_TAG,
-                                CONTAINER_NAME: config.SERVICE.CONTAINER_NAME,
-                                SERVICE_NAME: config.SERVICE.NAME,
-                                ECR_REGISTRY:ECR_REGISTRY
-                            )
-                        }
+                        // withAWS(credentials: 'aws-credentials', region: config.AWS.REGION) {
+                        //     global.deployToEKS(
+                        //         CLUSTER_NAME: config.KUBERNETES.CLUSTER_NAME,
+                        //         NAMESPACE: config.KUBERNETES.NAMESPACE,
+                        //         DEPLOYMENT_NAME: config.KUBERNETES.DEPLOYMENT_NAME,
+                        //         ECR_REPOSITORY: config.SERVICE.ECR_REPOSITORY,
+                        //         IMAGE_TAG: IMAGE_TAG,
+                        //         CONTAINER_NAME: config.SERVICE.CONTAINER_NAME,
+                        //         SERVICE_NAME: config.SERVICE.NAME,
+                        //         ECR_REGISTRY:ECR_REGISTRY
+                        //     )
+                        // }
                     }
                 }
             }
